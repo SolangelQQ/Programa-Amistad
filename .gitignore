@@ -1,0 +1,41 @@
+# --- Backend (Node.js + TypeScript) ---
+# Dependencias
+backend/node_modules/
+backend/package-lock.json
+
+# Build de TypeScript
+backend/dist/
+
+# Variables de entorno
+backend/.env
+backend/.env.*
+
+# Logs y temporales
+backend/*.log
+backend/tmp/
+backend/.DS_Store
+
+# --- Frontend (React + Vite) ---
+# Dependencias
+frontend/node_modules/
+frontend/package-lock.json
+
+# Build de Vite
+frontend/dist/
+frontend/.vite/
+frontend/build/
+
+# Cache
+frontend/.cache/
+
+# Variables de entorno
+frontend/.env
+frontend/.env.*
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Sistema
+.DS_Store
+*.log
