@@ -1,19 +1,42 @@
-import express, { Request, Response } from 'express';
+import 'reflect-metadata';
+import 'tsconfig-paths/register'; // Añade esta línea al inicio
+import express from 'express';
 import cors from 'cors';
+import { initializeDatabase } from '@shared/config/database';
+import userRoutes from '@interfaces/http/user.routes';
+import authRoutes from '@interfaces/http/auth.routes';
+import { AppError } from '@shared/errors/AppError';
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 8000;
 
-// Middlewares
-app.use(cors({ origin: 'http://localhost:5173' })); // Permite conexiones desde el frontend
-app.use(express.json()); // Para parsear JSON
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-// Ruta de ejemplo
-app.get('/api/hello', (req: Request, res: Response) => {
-  res.json({ message: "Hola desde fab!" });
+// Routes
+app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
+app.get('/', (req, res) => {
+  res.send('🚀 Best Buddies Backend is up and running!');
+});
+// Error handling
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({ message: err.message });
+  }
+  console.error(err);
+  res.status(500).json({ message: 'Internal server error' });
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`Backend corriendo en http://localhost:${PORT}`);
-});
+// Initialize database and start server
+initializeDatabase()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch(error => {
+    console.error('Failed to initialize database:', error);
+    process.exit(1);
+  });
