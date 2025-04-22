@@ -15,7 +15,7 @@ export class AuthenticateUserQuery {
     if (!user) {
       throw new AppError('Invalid credentials', 401);
     }
-
+  
     const isPasswordValid = await this.passwordService.comparePasswords(
       password,
       user.password
@@ -23,21 +23,25 @@ export class AuthenticateUserQuery {
     if (!isPasswordValid) {
       throw new AppError('Invalid credentials', 401);
     }
-
+  
+    // Add null checks for roles
+    const roles = user.roles || [];
+    const permissions = roles.flatMap(role => (role.permissions || []).map(p => p.value));
+  
     const token = this.jwtService.generateToken({
       id: user.id,
       email: user.email,
-      roles: user.roles.map(role => role.name),
-      permissions: user.permissions
+      roles: roles.map(role => role.name),
+      permissions: permissions
     });
-
+    
     return {
       token,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
-        roles: user.roles.map(role => role.name)
+        roles: roles.map(role => role.name)
       }
     };
   }

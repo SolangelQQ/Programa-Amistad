@@ -38,21 +38,55 @@ export class AuthController {
     return value as StringValue;
   }
 
+  // async login(req: Request, res: Response): Promise<void> {
+  //   try {
+  //     const { email, password } = req.body;
+  //     const query = new AuthenticateUserQuery(
+  //       this.userRepository,
+  //       this.passwordService,
+  //       this.jwtService
+  //     );
+  //     const result = await query.execute(email, password);
+      
+  //     res.status(200).json(result);
+  //   } catch (error) {
+  //     if (error instanceof AppError) {
+  //       res.status(error.statusCode).json({ message: error.message });
+  //     } else {
+  //       res.status(500).json({ message: 'Internal server error' });
+  //     }
+  //   }
+  // }
+
+  // In AuthController.ts
   async login(req: Request, res: Response): Promise<void> {
     try {
       const { email, password } = req.body;
+      console.log(`Login attempt for email: ${email}`);
+      
       const query = new AuthenticateUserQuery(
         this.userRepository,
         this.passwordService,
         this.jwtService
       );
+      
       const result = await query.execute(email, password);
+      console.log('Login successful for user:', email);
       
       res.status(200).json(result);
-    } catch (error) {
+    } catch (error: unknown) {
+      // Log detailed error information
+      console.error('Login error details:', error);
+      
       if (error instanceof AppError) {
         res.status(error.statusCode).json({ message: error.message });
+      } else if (error instanceof Error) {
+        // If it's a standard Error object, we can access the message
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        res.status(500).json({ message: `Internal server error: ${error.message}` });
       } else {
+        // For completely unknown errors
         res.status(500).json({ message: 'Internal server error' });
       }
     }

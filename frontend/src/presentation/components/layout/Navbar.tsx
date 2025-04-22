@@ -1,154 +1,223 @@
-// import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Menu, X, ChevronDown, Bell, Search } from 'lucide-react';
+import { useAuthContext } from '../../../App';
 
-// export default function Navbar() {
-//   return (
-//     <nav className="bg-white shadow-lg">
-//       <div className="max-w-6xl mx-auto px-4">
-//         <div className="flex justify-between h-16">
-//           <div className="flex items-center">
-//             <Link to="/" className="text-xl font-semibold text-gray-800">
-//               Best Buddies
-//             </Link>
-//           </div>
-//           <div className="flex items-center space-x-4">
-//             <Link to="/" className="px-3 py-2 rounded-md text-sm font-medium text-gray-800 hover:bg-gray-100">
-//               Inicio
-//             </Link>
-//           </div>
-//         </div>
-//       </div>
-//     </nav>
-//   )
-// }
+interface NavbarProps {
+  toggleSidebar?: () => void;
+}
 
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { authService } from '../../../core/application/auth.service';
-const Navbar: React.FC = () => {
+const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, logout } = useAuthContext();
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const user = authService.getCurrentUser();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [notifications, setNotifications] = useState(3);
 
-  const handleLogout = () => {
-    authService.logout();
+  // Función para verificar si el usuario tiene rol de administrador
+  const isAdmin = () => {
+    if (!user?.roles) return false;
+    // Asumiendo que roles es un array de objetos Role que tienen una propiedad 'name' o similar
+    return user.roles.some(role => role.name === 'Administrador');
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('#user-menu-button') && !target.closest('#user-menu')) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location]);
+
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
+  // Función para obtener el nombre del rol principal
+  const getPrimaryRoleName = () => {
+    if (!user?.roles || user.roles.length === 0) return 'Invitado';
+    // Suponiendo que el primer rol es el principal
+    return user.roles[0].name || 'Usuario';
+  };
+
   return (
-    <nav className="bg-primary-600">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <span className="text-white text-xl font-bold">Best Buddies</span>
+    <header className="bg-white shadow-sm z-10">
+      <div className="flex items-center justify-between px-4 py-3">
+        {/* Left side - Menu toggle button */}
+        {/* <div className="flex items-center md:w-1/4">
+          {toggleSidebar && (
+            <button 
+              onClick={toggleSidebar}
+              className="text-gray-600 focus:outline-none hover:bg-gray-100 p-2 rounded-md"
+              aria-label="Toggle sidebar"
+            >
+              <Menu size={20} />
+            </button>
+          )}
+        </div> */}
+        
+        {/* Center - Search */}
+        <div className="hidden md:block flex-grow max-w-md mx-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <Search size={18} className="text-gray-400" />
             </div>
-            <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-4">
-                <Link to="/dashboard" className="text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-primary-500">
-                  Dashboard
-                </Link>
-                <Link to="/users" className="text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-primary-500">
-                  Usuarios
-                </Link>
-                <Link to="/activities" className="text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-primary-500">
-                  Actividades
-                </Link>
-              </div>
-            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Buscar..."
+            />
           </div>
-          <div className="hidden md:block">
-            <div className="ml-4 flex items-center md:ml-6">
-              <div className="relative ml-3">
-                <div>
-                  <button
-                    type="button"
-                    className="flex max-w-xs items-center rounded-full bg-primary-500 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-600"
-                    id="user-menu-button"
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  >
-                    <span className="sr-only">Abrir menú de usuario</span>
-                    <div className="h-8 w-8 rounded-full bg-primary-400 flex items-center justify-center text-white">
-                      {user?.name.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                  </button>
-                </div>
-                {isMenuOpen && (
-                  <div
-                    className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby="user-menu-button"
-                    tabIndex={-1}
-                  >
-                    <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Mi Perfil
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Cerrar Sesión
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+        </div>
+        
+        {/* Right side - Notifications & Profile */}
+        <div className="flex items-center space-x-4 md:w-1/4 justify-end">
+          {/* Notifications */}
+          <div className="relative">
+            <button className="p-2 text-gray-600 rounded-full hover:bg-gray-100 focus:outline-none">
+              <Bell size={20} />
+              {notifications > 0 && (
+                <span className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {notifications}
+                </span>
+              )}
+            </button>
           </div>
-          <div className="-mr-2 flex md:hidden">
+          
+          {/* Profile dropdown */}
+          <div className="relative">
             <button
               type="button"
-              className="inline-flex items-center justify-center rounded-md bg-primary-700 p-2 text-white hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-800"
-              aria-controls="mobile-menu"
-              aria-expanded={isMenuOpen}
+              className="flex items-center space-x-3 focus:outline-none"
+              id="user-menu-button"
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+            >
+              <div className="hidden md:block text-right">
+                <p className="text-sm font-medium text-gray-700">{user?.name || 'Usuario'}</p>
+                <p className="text-xs text-gray-500">{getPrimaryRoleName()}</p>
+              </div>
+              <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                {user?.name?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <ChevronDown size={16} className="text-gray-500 hidden md:block" />
+            </button>
+            
+            {isProfileOpen && (
+              <div
+                id="user-menu"
+                className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 ring-1 ring-black ring-opacity-5"
+              >
+                <Link to="/dashboard/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  Mi Perfil
+                </Link>
+                <Link to="/dashboard/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  Configuración
+                </Link>
+                <div className="border-t border-gray-100"></div>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Cerrar Sesión
+                </button>
+              </div>
+            )}
+          </div>
+          
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button
+              type="button"
+              className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              <span className="sr-only">Abrir menú principal</span>
               {isMenuOpen ? (
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X size={24} />
               ) : (
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                <Menu size={24} />
               )}
             </button>
           </div>
         </div>
       </div>
-
+      
+      {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden" id="mobile-menu">
-          <div className="space-y-1 px-2 pt-2 pb-3 sm:px-3">
-            <Link to="/dashboard" className="text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-primary-500">
-              Dashboard
-            </Link>
-            <Link to="/users" className="text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-primary-500">
-              Usuarios
-            </Link>
-            <Link to="/activities" className="text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-primary-500">
-              Actividades
-            </Link>
+        <div className="md:hidden border-t border-gray-200">
+          {/* Mobile search */}
+          <div className="px-4 py-3">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <Search size={18} className="text-gray-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm"
+                placeholder="Buscar..."
+              />
+            </div>
           </div>
-          <div className="border-t border-primary-700 pt-4 pb-3">
-            <div className="flex items-center px-5">
+          
+          {/* Mobile navigation */}
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            <Link to="/dashboard" className={`block px-3 py-2 rounded-md text-base font-medium ${location.pathname === '/dashboard' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}>
+              Panel Principal
+            </Link>
+            <Link to="/dashboard/amistades" className={`block px-3 py-2 rounded-md text-base font-medium ${location.pathname.includes('/amistades') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}>
+              Emparejamiento de amistades
+            </Link>
+            <Link to="/dashboard/reportes" className={`block px-3 py-2 rounded-md text-base font-medium ${location.pathname.includes('/reportes') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}>
+              Reportes
+            </Link>
+            <Link to="/dashboard/documentos" className={`block px-3 py-2 rounded-md text-base font-medium ${location.pathname.includes('/documentos') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}>
+              Documentos
+            </Link>
+            {/* Usando la función isAdmin para verificar el rol */}
+            {isAdmin() && (
+              <Link to="/dashboard/roles" className={`block px-3 py-2 rounded-md text-base font-medium ${location.pathname.includes('/roles') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}>
+                Roles
+              </Link>
+            )}
+          </div>
+          
+          {/* Mobile profile info */}
+          <div className="border-t border-gray-200 pt-4 pb-3">
+            <div className="flex items-center px-4">
               <div className="flex-shrink-0">
-                <div className="h-10 w-10 rounded-full bg-primary-400 flex items-center justify-center text-white">
-                  {user?.name.charAt(0).toUpperCase() || 'U'}
+                <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                  {user?.name?.charAt(0).toUpperCase() || 'U'}
                 </div>
               </div>
               <div className="ml-3">
-                <div className="text-base font-medium text-white">{user?.name || 'Usuario'}</div>
-                <div className="text-sm font-medium text-primary-300">{user?.email || 'email@example.com'}</div>
+                <div className="text-base font-medium text-gray-800">{user?.name || 'Usuario'}</div>
+                <div className="text-sm font-medium text-gray-500">{user?.email || ''}</div>
               </div>
             </div>
-            <div className="mt-3 space-y-1 px-2">
-              <Link to="/profile" className="block rounded-md px-3 py-2 text-base font-medium text-white hover:bg-primary-500">
+            <div className="mt-3 px-2 space-y-1">
+              <Link to="/dashboard/profile" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">
                 Mi Perfil
+              </Link>
+              <Link to="/dashboard/settings" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">
+                Configuración
               </Link>
               <button
                 onClick={handleLogout}
-                className="block w-full text-left rounded-md px-3 py-2 text-base font-medium text-white hover:bg-primary-500"
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
               >
                 Cerrar Sesión
               </button>
@@ -156,7 +225,7 @@ const Navbar: React.FC = () => {
           </div>
         </div>
       )}
-    </nav>
+    </header>
   );
 };
 

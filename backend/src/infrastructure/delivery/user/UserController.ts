@@ -41,9 +41,17 @@ export class UserController {
     try {
       const { userId } = req.params;
       const { roleId } = req.body;
+  
       const command = new AssignRoleCommand(this.userRepository);
-      await command.execute(userId, roleId);
-      
+      const requestPayload = {
+        userId,
+        roleIds: [roleId]
+      };
+  
+      const requesterId = req.user?.id || ''; // Asegúrate de tener middleware que agregue `req.user`
+  
+      await command.execute(requestPayload, requesterId);
+  
       res.status(204).send();
     } catch (error) {
       if (error instanceof AppError) {
@@ -53,6 +61,7 @@ export class UserController {
       }
     }
   }
+  
 
   async getUserById(req: Request, res: Response): Promise<void> {
     try {

@@ -6,6 +6,7 @@ import { initializeDatabase } from '@shared/config/database';
 import userRoutes from '@interfaces/http/user.routes';
 import authRoutes from '@interfaces/http/auth.routes';
 import { AppError } from '@shared/errors/AppError';
+import roleRoutes from '@interfaces/http/role.routes';
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -17,6 +18,7 @@ app.use(express.json());
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/roles', roleRoutes); 
 app.get('/', (req, res) => {
   res.send('🚀 Best Buddies Backend is up and running!');
 });

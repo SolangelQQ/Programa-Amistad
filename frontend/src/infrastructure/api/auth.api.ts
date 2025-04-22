@@ -14,10 +14,11 @@ class AuthApi {
   async register(userData: UserRegistration): Promise<AuthResponse> {
     return apiClient.post<AuthResponse>('/auth/register', userData);
   }
-  
+
   async loginWithGoogle(googleToken: string): Promise<AuthResponse> {
     return apiClient.post<AuthResponse>('/auth/google-login', { token: googleToken });
   }
 }
+
 
 export const authApi = new AuthApi();

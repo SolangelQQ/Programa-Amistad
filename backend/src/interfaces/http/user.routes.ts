@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { UserController } from '../../infrastructure/delivery/user/UserController';
-import { authenticate } from '../middleware/authMiddleware';
+import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 const userController = new UserController();
@@ -9,7 +9,7 @@ const userController = new UserController();
 router.post('/', userController.createUser.bind(userController));
 
 // Protected routes (require authentication)
-router.use(authenticate);
+router.use(authMiddleware);
 
 router.get('/:id', userController.getUserById.bind(userController));
 router.post('/:userId/roles', userController.assignRole.bind(userController));

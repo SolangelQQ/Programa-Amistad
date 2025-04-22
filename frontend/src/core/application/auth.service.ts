@@ -35,7 +35,7 @@ export class AuthService {
       throw error;
     }
   }
-  
+
 
   async logout(): Promise<void> {
     localStorageService.removeToken();

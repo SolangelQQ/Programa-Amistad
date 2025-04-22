@@ -1,50 +1,58 @@
-import { Role } from '@core/domain/user/role.entity';
-import { User } from '@core/domain/user/user.entity';
+// src/infrastructure/persistence/user/UserMapper.ts
+import { User } from '../../../core/domain/user/user.entity';
+import { Role } from '../../../core/domain/user/role.entity';
+import { Permission } from '../../../core/domain/user/permission.value-object';
+
+interface PersistenceUser {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export class UserMapper {
-  static toDomain(userData: any, roles: Role[] = []): User {
+  static toDomain(persistence: any, roles: Role[] = []): User {
     return new User(
-      userData.id,
-      userData.name,
-      userData.email,
-      userData.password,
-      userData.status,
-      new Date(userData.created_at),
-      new Date(userData.updated_at),
-      roles
+      persistence.id,
+      persistence.name,
+      persistence.email,
+      persistence.password,
+      persistence.status,
+      roles,
+      new Date(persistence.created_at),
+      new Date(persistence.updated_at)
     );
   }
 
-  static roleToDomain(roleData: any): Role {
+  static toPersistence(domain: User): PersistenceUser {
+    return {
+      id: domain.id,
+      name: domain.name,
+      email: domain.email,
+      password: domain.password,
+      status: domain.status,
+      createdAt: domain.createdAt,
+      updatedAt: domain.updatedAt
+    };
+  }
+
+  static roleToDomain(persistence: any): Role {
+    let permissions: Permission[] = [];
+    
+    if (persistence.permissions && Array.isArray(persistence.permissions)) {
+      permissions = persistence.permissions.map(
+        (p: any) => new Permission(p.value, p.description)
+      );
+    }
+    
     return new Role(
-      roleData.id,
-      roleData.name,
-      roleData.description,
-      new Date(roleData.created_at),
-      new Date(roleData.updated_at),
-      JSON.parse(roleData.permissions || '[]')
+      persistence.id,
+      persistence.name,
+      persistence.description,
+      permissions
     );
-  }
-
-  static toPersistence(user: User): any {
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      password: user.password,
-      status: user.status,
-      created_at: user.createdAt,
-      updated_at: user.updatedAt
-    };
-  }
-
-  static roleToPersistence(role: Role): any {
-    return {
-      id: role.id,
-      name: role.name,
-      description: role.description,
-      permissions: JSON.stringify(role.permissions),
-      created_at: role.createdAt,
-      updated_at: role.updatedAt
-    };
   }
 }
